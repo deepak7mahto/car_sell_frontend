@@ -1,19 +1,26 @@
 import axios from "axios";
-import { resolve } from "path";
 import { rootUrl } from "../../utils";
+import { Car } from "../carListing/carSlice";
 import {
   UserLoginObject,
   UserRegisterObject,
   UserRegisterResponse,
-  UserResponse,
+  UserLoginResponse,
+  AddAdminCarResponse,
 } from "./userSlice";
 
-export function doLoginApi(data: UserLoginObject): Promise<UserResponse> {
-  return new Promise<UserResponse>((resolve, reject) => {
+export function doLoginApi(data: UserLoginObject): Promise<UserLoginResponse> {
+  return new Promise<UserLoginResponse>(async (resolve, reject) => {
     try {
       const { username, password } = data;
-      const response: UserResponse = { token: "" };
-      resolve(response);
+      let response = await axios.post(
+        rootUrl + "/api",
+        {
+          query: `mutation {  loginUser( username : "${username}" , password :  "${password}" ) { message token user { userName name } }}`,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      resolve(response.data.data.loginUser);
     } catch (error) {
       console.log(error);
       reject("error");
@@ -30,7 +37,7 @@ export function doRegisterApi(
       let response = await axios.post(
         rootUrl + "/api",
         {
-          query: `mutation {\n  registerUser(name : \"${name}\", username :\"${username}\", password : \"${password}\") {\n    userName\n    message\n  }\n}\n`,
+          query: `mutation {  registerUser(name :  "${name}" , username : "${username}" , password :  "${password}" ) {    userName    message  }}`,
         },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -43,10 +50,23 @@ export function doRegisterApi(
   });
 }
 
-export function getAdminCars() {
-  return new Promise((resolve, reject) => {
+export function getAdminCarsApi() {
+  return new Promise(async (resolve, reject) => {
     try {
-      resolve([]);
+      let token: string = localStorage.getItem("token") || "";
+
+      let response = await axios.post(
+        rootUrl + "/api",
+        {
+          query:
+            "{ adminCars { id carMake carModel carYear carPictureUrl carSalePrice additionalNotes addedBy sold __typename }}",
+        },
+        {
+          headers: { "Content-Type": "application/json", Authorization: token },
+        }
+      );
+
+      resolve(response.data.data.adminCars);
     } catch (error) {
       console.log(error);
       reject("error");
@@ -54,10 +74,31 @@ export function getAdminCars() {
   });
 }
 
-export function addAdminCar() {
-  return new Promise((resolve, reject) => {
+export function addAdminCarApi(car: Car) {
+  return new Promise<AddAdminCarResponse>(async (resolve, reject) => {
     try {
-      resolve("");
+      let token: string = localStorage.getItem("token") || "";
+
+      const {
+        additionalNotes,
+        carMake,
+        carModel,
+        carPictureUrl,
+        carSalePrice,
+        carYear,
+      } = car;
+
+      let response = await axios.post(
+        rootUrl + "/api",
+        {
+          query: `mutation {  addAdminCar( carMake :  "${carMake}", additionalNotes : "${additionalNotes}" , carModel : "${carModel}" , carPictureUrl :  "${carPictureUrl}", carSalePrice : ${carSalePrice}, carYear : "${carYear}" ) {  message  }}`,
+        },
+        {
+          headers: { "Content-Type": "application/json", Authorization: token },
+        }
+      );
+
+      resolve(response.data.data.message);
     } catch (error) {
       console.log(error);
       reject("error");

@@ -35,6 +35,10 @@ function App() {
     }
   }, [redirect]);
 
+  // const state = useAppSelector((state) => state);
+
+  // console.log({ state });
+
   return (
     <div className="App">
       {message}

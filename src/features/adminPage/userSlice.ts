@@ -1,8 +1,15 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { doLoginApi, doRegisterApi } from "./userApi";
+import { Car } from "../carListing/carSlice";
+import {
+  addAdminCarApi,
+  doLoginApi,
+  doRegisterApi,
+  getAdminCarsApi,
+} from "./userApi";
 
-export interface UserResponse {
-  token: string;
+export interface User {
+  username: string;
+  name: string;
 }
 
 export interface UserRegisterResponse {
@@ -10,11 +17,18 @@ export interface UserRegisterResponse {
   message: string;
 }
 
+export interface UserLoginResponse {
+  token: string;
+  message: string;
+  user: User;
+}
+
 export interface UserState {
   authenticated: boolean;
-  user: UserResponse;
-  message: String;
+  user: User;
+  message: string;
   redirect: String;
+  token: string;
 }
 
 export interface UserLoginObject {
@@ -29,11 +43,16 @@ export interface UserRegisterObject {
   confirmPassword: string;
 }
 
+export interface AddAdminCarResponse {
+  message: string;
+}
+
 const initialState: UserState = {
   authenticated: false,
-  user: { token: "" },
+  user: { username: "", name: "" },
   message: "",
   redirect: "",
+  token: "",
 };
 
 export const doLogin = createAsyncThunk(
@@ -50,9 +69,30 @@ export const doRegister = createAsyncThunk(
   }
 );
 
+export const getAdminCars = createAsyncThunk("getAdminCars", async () => {
+  return await getAdminCarsApi();
+});
+
+export const addAdminCar = createAsyncThunk("addAdminCar", async (car: Car) => {
+  return await addAdminCarApi(car);
+});
+
+const getInitialState = () => {
+  let storedToken = localStorage.getItem("token");
+  let storedUser = localStorage.getItem("user");
+
+  if (storedToken && storedUser) {
+    initialState.token = storedToken;
+    initialState.user = JSON.parse(storedUser);
+    initialState.authenticated = true;
+  }
+
+  return initialState;
+};
+
 export const userSlice = createSlice({
   name: "user",
-  initialState,
+  initialState: getInitialState(),
   reducers: {
     clearMessage: (state) => {
       state.message = "";
@@ -60,20 +100,38 @@ export const userSlice = createSlice({
     clearRedirect: (state) => {
       state.redirect = "";
     },
+    doLogOut: (state) => {
+      localStorage.clear();
+      state.authenticated = false;
+      state.token = "";
+      state.message = "See you Again !!!";
+      state.redirect = "/";
+      state.user = initialState.user;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(doLogin.fulfilled, (state, action) => {
+      localStorage.setItem("user", JSON.stringify(action.payload.user));
+      localStorage.setItem("token", action.payload.token);
+
       state.authenticated = true;
-      state.user = action.payload;
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.message = action.payload.message;
+      state.redirect = "/admin";
     });
 
     builder.addCase(doRegister.fulfilled, (state, action) => {
       state.message = action.payload.message;
       state.redirect = "/login";
     });
+
+    builder.addCase(addAdminCar.fulfilled, (state, action) => {
+      state.message = action.payload.message;
+    });
   },
 });
 
-export const { clearMessage, clearRedirect } = userSlice.actions;
+export const { clearMessage, clearRedirect, doLogOut } = userSlice.actions;
 
 export const userReducer = userSlice.reducer;

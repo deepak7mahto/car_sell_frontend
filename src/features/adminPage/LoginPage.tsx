@@ -34,6 +34,9 @@ const LoginPage: React.FC = () => {
   return (
     <div>
       Login
+      <div>
+        <button onClick={() => navigate("/")}>Home</button>
+      </div>
       <form onSubmit={onFormSubmit}>
         <div>
           <label>User name</label>

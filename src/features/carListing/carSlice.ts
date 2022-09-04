@@ -2,15 +2,15 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { getAllCarsApi } from "./carApi";
 
 export interface Car {
-  id: number;
+  id?: number;
   carMake: string;
   carModel: string;
   carYear: string;
   carPictureUrl: string;
   carSalePrice: number;
   additionalNotes: string;
-  addedBy: string;
-  sold: boolean;
+  addedBy?: string;
+  sold?: boolean;
 }
 
 export interface CarState {
