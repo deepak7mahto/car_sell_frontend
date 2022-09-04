@@ -1,56 +1,49 @@
-import React from 'react';
-import logo from './logo.svg';
-import { Counter } from './features/counter/Counter';
-import './App.css';
+import { useEffect } from "react";
+import { Route, Routes, useNavigate } from "react-router-dom";
+import "./App.css";
+import { useAppDispatch, useAppSelector } from "./app/hooks";
+import PrivateRoute from "./app/PrivateRoute";
+import AdminPage from "./features/adminPage/AdminPage";
+import LoginPage from "./features/adminPage/LoginPage";
+import RegisterPage from "./features/adminPage/RegisterPage";
+import { clearMessage, clearRedirect } from "./features/adminPage/userSlice";
+import CarListing from "./features/carListing/CarListing";
+
+let timeOut: any;
 
 function App() {
+  const message = useAppSelector((state) => state.user.message);
+  const redirect = useAppSelector((state) => state.user.redirect);
+  const navigate = useNavigate();
+
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    timeOut = setTimeout(() => {
+      dispatch(clearMessage());
+    }, 5000);
+
+    return () => {
+      clearTimeout(timeOut);
+    };
+  }, [message]);
+
+  useEffect(() => {
+    if (redirect !== "") {
+      navigate(redirect.toString());
+      dispatch(clearRedirect());
+    }
+  }, [redirect]);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <Counter />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <span>
-          <span>Learn </span>
-          <a
-            className="App-link"
-            href="https://reactjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux-toolkit.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux Toolkit
-          </a>
-          ,<span> and </span>
-          <a
-            className="App-link"
-            href="https://react-redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React Redux
-          </a>
-        </span>
-      </header>
+      {message}
+      <Routes>
+        <Route path="/" element={<CarListing />} />
+        <Route path="/admin" element={<PrivateRoute component={AdminPage} />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Routes>
     </div>
   );
 }
